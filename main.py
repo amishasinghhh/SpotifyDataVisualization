@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import requests
 import os
 from decouple import config
+from requests.api import get
 
 
 CLIENT_ID = config('CLIENT_ID')
@@ -37,16 +38,42 @@ BASE_URL = 'https://api.spotify.com/v1'
 
 # Track ID from the URI
 
-# actual GET request with proper header
-r = requests.get(BASE_URL+'/search?q='+input+'&type=artist&limit=1', headers=headers)
-
-r = r.json()
-id=(r['artists'])
+# Gets ID of an artist from a search
+gettingArtistID = requests.get(BASE_URL+'/search?q='+input+'&type=artist&limit=1', headers=headers)
+gettingArtistID = gettingArtistID.json()
+id=(gettingArtistID['artists'])
 id=(id['items'])
 id=id[0]
 id=(id['id'])
-print(id)
 
-k=requests.get(BASE_URL+'/artists/'+id+'/albums?limit=20',headers=headers)
-k=k.json()
-print(k)
+# Gets album names and IDs of a particular artist
+gettingAlbums=requests.get(BASE_URL+'/artists/'+id+'/albums?limit=30',headers=headers)
+gettingAlbums=gettingAlbums.json()
+gettingAlbums = (gettingAlbums['items'])
+albumNames=[]
+albumIDs=[]
+i=0
+while i < len(gettingAlbums):
+    albumNames.append(gettingAlbums[i]['name'])
+    albumIDs.append(gettingAlbums[i]['id'])
+    i=i+1
+
+i=0
+albumTracksPopularity=[]
+while i<len(albumIDs):
+    gettingTracks=requests.get(BASE_URL+'/albums/'+albumIDs[i]+'/tracks', headers=headers)
+    gettingTracks=gettingTracks.json()
+    gettingTracks=gettingTracks['items']
+    j=0
+    totalTTrackPopularity=0
+    while j<len(gettingTracks):
+        trackID=gettingTracks[j]['id']
+        gettingTrackPopularity=requests.get(BASE_URL+'/tracks/'+trackID, headers=headers)
+        gettingTrackPopularity=gettingTrackPopularity.json()
+        gettingTrackPopularity=gettingTrackPopularity['popularity']
+        totalTTrackPopularity=totalTTrackPopularity+gettingTrackPopularity
+        j=j+1
+    albumTracksPopularity.append(totalTTrackPopularity/j)
+    print(str(albumNames[i]) + ': ' + str(albumTracksPopularity[i]))
+    i=i+1
+    # i=i+1
