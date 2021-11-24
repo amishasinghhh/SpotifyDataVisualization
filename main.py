@@ -1,3 +1,4 @@
+import PySimpleGUI as sg                        
 import json
 import pandas as pd
 from IPython.display import display
@@ -31,49 +32,68 @@ headers = {
     'Authorization': 'Bearer {token}'.format(token=access_token)
 }
 
-input=input("Type in an artist ")
 
-# base URL of all Spotify API endpoints
-BASE_URL = 'https://api.spotify.com/v1'
+# Define the window's contents
+layout = [  [sg.Text("Enter an artist")],     # Part 2 - The Layout
+            [sg.Input()],
+            [sg.MLine(size=(40,20), key='-OUTPUT-')],
+            [sg.Button('Ok')] ]
 
-# Track ID from the URI
+# Create the window
+window = sg.Window('Window Title', layout)      # Part 3 - Window Defintion
 
-# Gets ID of an artist from a search
-gettingArtistID = requests.get(BASE_URL+'/search?q='+input+'&type=artist&limit=1', headers=headers)
-gettingArtistID = gettingArtistID.json()
-id=(gettingArtistID['artists'])
-id=(id['items'])
-id=id[0]
-id=(id['id'])
+while True:
+    event, values = window.read()
+    # See if user wants to quit or window was closed
+    if event == sg.WINDOW_CLOSED or event == 'Quit':
+        break
+    input=values[0]
+    # base URL of all Spotify API endpoints
+    BASE_URL = 'https://api.spotify.com/v1'
 
-# Gets album names and IDs of a particular artist
-gettingAlbums=requests.get(BASE_URL+'/artists/'+id+'/albums?limit=30',headers=headers)
-gettingAlbums=gettingAlbums.json()
-gettingAlbums = (gettingAlbums['items'])
-albumNames=[]
-albumIDs=[]
-i=0
-while i < len(gettingAlbums):
-    albumNames.append(gettingAlbums[i]['name'])
-    albumIDs.append(gettingAlbums[i]['id'])
-    i=i+1
+    # Track ID from the URI
 
-i=0
-albumTracksPopularity=[]
-while i<len(albumIDs):
-    gettingTracks=requests.get(BASE_URL+'/albums/'+albumIDs[i]+'/tracks', headers=headers)
-    gettingTracks=gettingTracks.json()
-    gettingTracks=gettingTracks['items']
-    j=0
-    totalTTrackPopularity=0
-    while j<len(gettingTracks):
-        trackID=gettingTracks[j]['id']
-        gettingTrackPopularity=requests.get(BASE_URL+'/tracks/'+trackID, headers=headers)
-        gettingTrackPopularity=gettingTrackPopularity.json()
-        gettingTrackPopularity=gettingTrackPopularity['popularity']
-        totalTTrackPopularity=totalTTrackPopularity+gettingTrackPopularity
-        j=j+1
-    albumTracksPopularity.append(totalTTrackPopularity/j)
-    print(str(albumNames[i]) + ': ' + str(albumTracksPopularity[i]))
-    i=i+1
-    # i=i+1
+    # Gets ID of an artist from a search
+    gettingArtistID = requests.get(BASE_URL+'/search?q='+input+'&type=artist&limit=1', headers=headers)
+    gettingArtistID = gettingArtistID.json()
+    id=(gettingArtistID['artists'])
+    id=(id['items'])
+    id=id[0]
+    id=(id['id'])
+
+    # Gets album names and IDs of a particular artist
+    gettingAlbums=requests.get(BASE_URL+'/artists/'+id+'/albums?limit=30',headers=headers)
+    gettingAlbums=gettingAlbums.json()
+    gettingAlbums = (gettingAlbums['items'])
+    albumNames=[]
+    albumIDs=[]
+    i=0
+    while i < len(gettingAlbums):
+        albumNames.append(gettingAlbums[i]['name'])
+        albumIDs.append(gettingAlbums[i]['id'])
+        i=i+1
+
+    i=0
+    albumTracksPopularity=[]
+    toString = ''
+    while i<len(albumIDs):
+        gettingTracks=requests.get(BASE_URL+'/albums/'+albumIDs[i]+'/tracks', headers=headers)
+        gettingTracks=gettingTracks.json()
+        gettingTracks=gettingTracks['items']
+        j=0
+        totalTTrackPopularity=0
+        while j<len(gettingTracks):
+            trackID=gettingTracks[j]['id']
+            gettingTrackPopularity=requests.get(BASE_URL+'/tracks/'+trackID, headers=headers)
+            gettingTrackPopularity=gettingTrackPopularity.json()
+            gettingTrackPopularity=gettingTrackPopularity['popularity']
+            totalTTrackPopularity=totalTTrackPopularity+gettingTrackPopularity
+            j=j+1
+        albumTracksPopularity.append(totalTTrackPopularity/j)
+        toString=toString+str(albumNames[i]) + ": " + str(albumTracksPopularity[i]) + "\n"
+        # Output a message to the window
+        i=i+1
+    # Output a message to the window
+    window['-OUTPUT-'].update(toString)
+
+window.close()    
