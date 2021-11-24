@@ -64,6 +64,7 @@ while True:
     window['-OUTPUT-'].update("Popularity: " + str(popularity))
 
 window.close()    
+
                                                 
 # Display and interact with the Window
 
